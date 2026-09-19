@@ -17,19 +17,44 @@
             Text eingeben. QR-Code bekommen.
         </p>
 
-        <form id="qr-form" class="input-group">
-            <input id="text" type="text" placeholder="https://example.com" autocomplete="off">
+        <div id="input-section">
+            <form id="qr-form" class="input-group">
+                <input id="text" type="text" placeholder="https://example.com" autocomplete="off">
 
-            <button type="submit">
-                Erzeugen
-            </button>
-        </form>
+                <button type="submit">
+                    Erzeugen
+                </button>
+            </form>
+
+            <div class="separator">
+                <span>oder WLAN</span>
+            </div>
+
+            <form id="wifi-form" class="wifi-form">
+                <input id="wifi-ssid" type="text" placeholder="WLAN-Name (SSID)" autocomplete="off" required>
+
+                <input id="wifi-password" type="password" placeholder="Passwort" autocomplete="off">
+
+                <select id="wifi-security">
+                    <option value="WPA">WPA / WPA2 / WPA3</option>
+                    <option value="WEP">WEP</option>
+                    <option value="nopass">Kein Passwort</option>
+                </select>
+                <button type="submit">
+                    WLAN QR-Code
+                </button>
+            </form>
+        </div>
 
         <div id="qr-result" class="qr-result" hidden>
             <img id="qr-code" alt="QR Code">
 
             <button id="copy-button" class="copy-button" type="button">
                 Code kopieren
+            </button>
+
+            <button id="reset-button" class="reset-button" type="button">
+                Neuer QR-Code
             </button>
         </div>
 
@@ -40,11 +65,9 @@
 
     <script>
         let currentQrBlob = null;
+        let currentQrUrl = null;
 
-        async function generateQrCode() {
-            document.querySelector("#qr-result").hidden = false;
-            const text = document.querySelector("#text").value;
-
+        async function generateQrCode(text) {
             const response = await fetch("/api/qr", {
                 method: "POST",
                 headers: {
@@ -55,13 +78,24 @@
                 })
             });
 
+            if (!response.ok) {
+                return;
+            }
+
             currentQrBlob = await response.blob();
 
-            const imageUrl = URL.createObjectURL(currentQrBlob);
+            if (currentQrUrl) {
+                URL.revokeObjectURL(currentQrUrl);
+            }
+
+            currentQrUrl = URL.createObjectURL(currentQrBlob);
 
             const image = document.querySelector("#qr-code");
 
-            image.src = imageUrl;
+            image.src = currentQrUrl;
+
+            document.querySelector("#qr-result").hidden = false;
+            document.querySelector("#input-section").hidden = true;
 
             const copyButton = document.querySelector("#copy-button");
             copyButton.addEventListener("click", async () => {
@@ -89,7 +123,56 @@
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            await generateQrCode();
+            const text = document.querySelector("#text").value;
+
+            await generateQrCode(text);
+        });
+
+        function escapeWifi(value) {
+            return value
+                .replaceAll("\\", "\\\\")
+                .replaceAll(";", "\\;")
+                .replaceAll(",", "\\,")
+                .replaceAll(":", "\\:");
+        }
+
+        const wifiForm = document.querySelector("#wifi-form");
+        wifiForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const ssid = document.querySelector("#wifi-ssid").value;
+            const password = document.querySelector("#wifi-password").value;
+            const security = document.querySelector("#wifi-security").value;
+
+            let wifiString;
+
+            if (security === "nopass") {
+                wifiString = `WIFI:T:nopass;S:${escapeWifi(ssid)};;`;
+            } else {
+                wifiString = `WIFI:T:${security};S:${escapeWifi(ssid)};P:${escapeWifi(password)};;`;
+            }
+
+            await generateQrCode(wifiString);
+        });
+
+        const resetButton = document.querySelector("#reset-button");
+        resetButton.addEventListener("click", () => {
+            document.querySelector("#qr-result").hidden = true;
+            document.querySelector("#input-section").hidden = false;
+            document.querySelector("#qr-form").reset();
+            document.querySelector("#wifi-form").reset();
+            const image = document.querySelector("#qr-code");
+            image.removeAttribute("src");
+
+            if (currentQrUrl) {
+                URL.revokeObjectURL(currentQrUrl);
+                currentQrUrl = null;
+            }
+
+            currentQrBlob = null;
+
+            document.querySelector("#copy-button").textContent = "Code kopieren";
+            document.querySelector("#text").focus();
         });
     </script>
 </body>
