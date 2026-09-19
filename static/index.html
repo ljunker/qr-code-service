@@ -25,8 +25,12 @@
             </button>
         </form>
 
-        <div class="qr-container">
-            <img id="qr-code" alt="QR Code" style="display: none;">
+        <div id="qr-result" class="qr-result" hidden>
+            <img id="qr-code" alt="QR Code">
+
+            <button id="copy-button" class="copy-button" type="button">
+                Code kopieren
+            </button>
         </div>
 
         <footer>
@@ -35,7 +39,10 @@
     </main>
 
     <script>
+        let currentQrBlob = null;
+
         async function generateQrCode() {
+            document.querySelector("#qr-result").hidden = false;
             const text = document.querySelector("#text").value;
 
             const response = await fetch("/api/qr", {
@@ -48,14 +55,34 @@
                 })
             });
 
-            const blob = await response.blob();
+            currentQrBlob = await response.blob();
 
-            const imageUrl = URL.createObjectURL(blob);
+            const imageUrl = URL.createObjectURL(currentQrBlob);
 
             const image = document.querySelector("#qr-code");
 
             image.src = imageUrl;
-            image.style.display = "block";
+
+            const copyButton = document.querySelector("#copy-button");
+            copyButton.addEventListener("click", async () => {
+                if (!currentQrBlob) {
+                    return;
+                }
+
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        "image/png": currentQrBlob
+                    })
+                ]);
+
+                const button = document.querySelector("#copy-button");
+
+                button.textContent = "Kopiert :)";
+
+                setTimeout(() => {
+                    button.textContent = "Code kopieren";
+                }, 1500);
+            });
         }
 
         const form = document.querySelector("#qr-form");
