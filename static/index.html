@@ -1,53 +1,70 @@
 <!DOCTYPE html>
 <html lang="de">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <title>QR Code Generator</title>
-    </head>
-    <body>
-        <main>
-            <h1>QR Code Generator</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/static/style.css" rel="stylesheet" />
 
-            <input
-                id="text"
-                type="text"
-                placeholder="Text eingeben"
-            >
+    <title>QR Code Generator</title>
+</head>
 
-            <button onclick="generateQrCode()">
-                QR-Code erzeugen
+<body>
+    <main>
+        <h1>QR Generator</h1>
+
+        <p class="subtitle">
+            Text eingeben. QR-Code bekommen.
+        </p>
+
+        <form id="qr-form" class="input-group">
+            <input id="text" type="text" placeholder="https://example.com" autocomplete="off">
+
+            <button type="submit">
+                Erzeugen
             </button>
+        </form>
 
-            <div>
-                <img id="qr-code" alt="QR Code" style="display: none">
-            </div>
-        </main>
+        <div class="qr-container">
+            <img id="qr-code" alt="QR Code" style="display: none;">
+        </div>
 
-        <script>
-            async function generateQrCode() {
-                const text = document.querySelector("#text").value;
+        <footer>
+            qr.kryptikk.de
+        </footer>
+    </main>
 
-                const response = await fetch("/api/qr", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        text: text
-                    })
-                });
+    <script>
+        async function generateQrCode() {
+            const text = document.querySelector("#text").value;
 
-                const blob = await response.blob();
+            const response = await fetch("/api/qr", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    text: text
+                })
+            });
 
-                const imageUrl = URL.createObjectURL(blob);
+            const blob = await response.blob();
 
-                const image = document.querySelector("#qr-code");
+            const imageUrl = URL.createObjectURL(blob);
 
-                image.src = imageUrl;
-                image.style.display = "block";
-            }
-        </script>
-    </body>
+            const image = document.querySelector("#qr-code");
+
+            image.src = imageUrl;
+            image.style.display = "block";
+        }
+
+        const form = document.querySelector("#qr-form");
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            await generateQrCode();
+        });
+    </script>
+</body>
+
 </html>
