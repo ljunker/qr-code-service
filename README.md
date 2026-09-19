@@ -24,7 +24,7 @@ docker buildx create \
 docker buildx build \
         --platform linux/amd64,linux/arm64 \
         -t kryptikker/qr-service:latest \
-        -t kryptikker/qr-service:1.1.1 \
+        -t kryptikker/qr-service:1.1.2 \
         --push \
         .
 ```
