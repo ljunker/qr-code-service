@@ -1,6 +1,6 @@
 services:
   app:
-    build: .
+    image: kryptikker/qr-service:1.0.0
     restart: unless-stopped
 
     ports:

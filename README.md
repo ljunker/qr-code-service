@@ -12,3 +12,19 @@ uv run uvicorn app:app --reload
 docker build -t qr-service .
 docker run -p 8000:8000 qr-service
 ```
+
+## Docker image pushen
+```bash
+docker buildx create \
+  --name multiarch \
+  --driver docker-container \
+  --bootstrap \
+  --use
+
+docker buildx build \
+        --platform linux/amd64,linux/arm64 \
+        -t kryptikker/qr-service:latest \
+        -t kryptikker/qr-service:1.0.0 \
+        --push \
+        .
+```
